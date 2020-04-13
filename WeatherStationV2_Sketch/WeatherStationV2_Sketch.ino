@@ -16,8 +16,6 @@ Adafruit_BME280 bme; // I2C
 bool sensor_online = false;
 
 int delayTime = 3000;
-long timer_100ms = 0;
-unsigned long main_timer = 0;
 
 const char *ssid     = "Mi 9 SE";
 const char *password = "12345678";
@@ -62,6 +60,7 @@ void setup() {
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
     delay(100);
+    int timer_100ms = 0;
     timer_100ms++;
     if (timer_100ms >= 100) {
       Serial.println("\nNo Internet Connection");
@@ -87,6 +86,7 @@ void setup() {
 
 // **************************************** L O O P ************************************************** //
 void loop() {
+  long main_timer = 0;
   printSensorData();
   if (WiFi.status() == WL_CONNECTED) {
     timeClient.update();
