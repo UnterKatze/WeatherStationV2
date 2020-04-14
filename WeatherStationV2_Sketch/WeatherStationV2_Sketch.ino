@@ -13,20 +13,30 @@
 
 // ********************************** D E C L A R A T I O N S **************************************** //
 Adafruit_BME280 bme; // I2C
-bool sensor_online = false;
 
-int delayTime = 3000;
+int delayTime = 1000;
+int mainCounter = 0;
+bool timeupdate = false;
 
-const char *ssid     = "Mi 9 SE";
-const char *password = "12345678";
+unsigned long set2020_1 = 1585450800;
+//uint32 set2020_2 = 1603602000;
+unsigned long set2020_2 = 1603594800;
+
+unsigned long set2021_1 = 1616900400;
+unsigned long set2021_2 = 1635656400;
+
+const char *ssid     = "Kwik-E-Mart";
+const char *password = "9589089603281286";
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 3600, 60000);
 
+unsigned status;
+
 // ************************************ F U N C T I O N S ******************************************** //
 
 void printSensorData() {
-  if (sensor_online == true) {
+  if (status) {
     Serial.print("Temperature = ");
     Serial.print(bme.readTemperature(), 1);
     Serial.println(" °C");
@@ -45,7 +55,27 @@ void printSensorData() {
   }
 }
 
-unsigned status;
+void printTime() {
+  int hour, minute, second;
+  unsigned long epoch_time;
+  if ((WiFi.status() == WL_CONNECTED)) {
+    hour = timeClient.getHours();
+    minute = timeClient.getMinutes();
+    second = timeClient.getSeconds();
+    epoch_time = timeClient.getEpochTime();
+    if ((epoch_time >= set2020_1) && (epoch_time <= set2020_2)) {
+      hour++;
+    } else {
+    }
+    Serial.println(epoch_time);
+    Serial.print(hour);
+    Serial.print(":");
+    Serial.print(minute);
+    Serial.print(":");
+    Serial.print(second);
+    Serial.print("\n");
+  }
+}
 
 // **************************************** S E T U P ************************************************ //
 void setup() {
@@ -53,7 +83,7 @@ void setup() {
   while (!Serial) {
     delay(1);                                                             // time to get serial running
   }
-  Serial.println("Serial working");
+  Serial.println("\nSerial working");
 
   WiFi.begin(ssid, password);
   Serial.print("Connecting to Internet ");
@@ -69,30 +99,25 @@ void setup() {
   }
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println("\nInternet Connection Established");
+    timeClient.begin();
   }
 
   status = bme.begin();
-  delay(1);
+  delay(100);
   if (!status) {
     Serial.println("Could not find a valid BME280 sensor");
-  } else {
-    sensor_online = true;
-  }
-
-  if (WiFi.status() == WL_CONNECTED) {
-    timeClient.begin();
   }
 }
 
 // **************************************** L O O P ************************************************** //
 void loop() {
-  long main_timer = 0;
+  timeupdate = timeClient.update();
+
   printSensorData();
-  if (WiFi.status() == WL_CONNECTED) {
-    timeClient.update();
-    Serial.println(timeClient.getFormattedTime());
-  }
+
+  printTime();
+
   Serial.print("\n");
-  main_timer++;
+  mainCounter++;
   delay(delayTime);
 }
