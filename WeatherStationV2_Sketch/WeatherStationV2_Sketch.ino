@@ -18,12 +18,11 @@ int delayTime = 1000;
 int mainCounter = 0;
 bool timeupdate = false;
 
-unsigned long set2020_1 = 1585450800;
-//uint32 set2020_2 = 1603602000;
-unsigned long set2020_2 = 1603594800;
+unsigned long set2020_1 = 1585443600; // 29.03.2020 02:00 UTC+1
+unsigned long set2020_2 = 1603587600; // 25.10.2020 03:00 UTC+2
 
-unsigned long set2021_1 = 1616900400;
-unsigned long set2021_2 = 1635656400;
+unsigned long set2021_1 = 1616893200; // 28.03.2021 02:00 UTC+1
+unsigned long set2021_2 = 1635642000; // 31.10.2021 03:00 UTC+2
 
 const char *ssid     = "Kwik-E-Mart";
 const char *password = "9589089603281286";
