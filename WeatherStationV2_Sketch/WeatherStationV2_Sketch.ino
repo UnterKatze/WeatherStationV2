@@ -16,7 +16,13 @@ Adafruit_BME280 bme; // I2C
 
 int delayTime = 1000;
 int mainCounter = 0;
+int hour, minute, second;
+bool nightmode = false;
 bool timeupdate = false;
+
+double temperature = 0.0;
+double pressure = 0.0;
+double humidity = 0.0;
 
 unsigned long set2020_1 = 1585443600; // 29.03.2020 02:00 UTC+1
 unsigned long set2020_2 = 1603587600; // 25.10.2020 03:00 UTC+2
@@ -36,31 +42,18 @@ String data;
 
 // ************************************ F U N C T I O N S ******************************************** //
 
-void printSensorData()
+void readSensorData()
 {
   if (status)
   {
-    Serial.print("Temperature = ");
-    Serial.print(bme.readTemperature(), 1);
-    Serial.println(" °C");
-
-    Serial.print("Normalized Pressure = ");
-    Serial.print((bme.readPressure() / 100.0F) + (0.12F * sensor_altitude), 1);
-    Serial.println(" hPa");
-
-    Serial.print("Approx. Altitude = ");
-    Serial.print(bme.readAltitude(SEALEVELPRESSURE_HPA), 1);
-    Serial.println(" m");
-
-    Serial.print("Humidity = ");
-    Serial.print(bme.readHumidity(), 0);
-    Serial.println(" %");
+    temperature = bme.readTemperature();
+    pressure = (bme.readPressure() / 100.0F) + (0.12F * sensor_altitude);
+    humidity = bme.readHumidity();
   }
 }
 
-void printTime()
+void readOnlineTime()
 {
-  int hour, minute, second;
   unsigned long epoch_time;
   if ((WiFi.status() == WL_CONNECTED))
   {
@@ -72,16 +65,13 @@ void printTime()
     {
       hour++;
     }
-    else
+    if ((hour >= 22) || (hour <= 5))
     {
+      nightmode = true;
+    } else
+    {
+      nightmode = false;
     }
-    Serial.println(epoch_time);
-    Serial.print(hour);
-    Serial.print(":");
-    Serial.print(minute);
-    Serial.print(":");
-    Serial.print(second);
-    Serial.print("\n");
   }
 }
 
@@ -99,20 +89,27 @@ void setup()
   Serial.begin(9600);
   while (!Serial)
   {
-    delay(1); // time to get serial running
+    delay(100); // time to get serial running
   }
+
+  data = "page 0";
+  printToDisplay();
 
   data = "t0.pco=65535";
   printToDisplay(); // Controller Starting
+  delay(100);
 
   data = "t3.pco=7648";
   printToDisplay(); // positive response
+  delay(100);
 
   data = "t1.pco=65535";
   printToDisplay(); // Starting Serial
+  delay(100);
 
   data = "t4.pco=7648";
-  SprintToDisplay(); // positive response
+  printToDisplay(); // positive response
+  delay(100);
 
   WiFi.begin(ssid, password);
   Serial.print("Connecting to Internet ");
@@ -140,7 +137,7 @@ void setup()
   status = bme.begin();
   data = "t9.pco=65535";
   printToDisplay(); // Configuring Sensor
-  delay(100);
+
   if (!status)
   {
     data = "t11.pco=63488";
@@ -151,17 +148,94 @@ void setup()
     data = "t10.pco=7648";
     printToDisplay(); // positive response
   }
+
+  delay(3000); // delay for reading boot info
+  data = "page 1";
+  printToDisplay(); // switch to page 1
 }
 
 // **************************************** L O O P ************************************************** //
 void loop()
 {
   timeupdate = timeClient.update();
+  readOnlineTime();
+  readSensorData();
+  // set correct picture function
+  if (nightmode) // put in own function + add background picture for text boxes + change color of text
+  {
+    data = "page1.pic=7";
+    printToDisplay(); // display night picture with wifi on
+  } else
+  {
+    if ((WiFi.status() == WL_CONNECTED) && (temperature < 0.0))
+    {
+      data = "page1.pic=9";
+      printToDisplay(); // display cold picture with wifi on
+      break;
+    }
+    if ((WiFi.status() != WL_CONNECTED) && (temperature < 0.0))
+    {
+      data = "page1.pic=8";
+      printToDisplay(); // display cold picture with wifi off
+      break;
+    }
 
-  printSensorData();
 
-  printTime();
+    if ((WiFi.status() == WL_CONNECTED) && (temperature < 10.0))
+    {
+      data = "page1.pic=5";
+      printToDisplay(); // display coldish picture with wifi on
+      break;
+    }
+    if ((WiFi.status() != WL_CONNECTED) && (temperature < 10.0))
+    {
+      data = "page1.pic=4";
+      printToDisplay(); // display coldish picture with wifi off
+      break;
+    }
 
+
+    if ((WiFi.status() == WL_CONNECTED) && (temperature < 20.0))
+    {
+      data = "page1.pic=1";
+      printToDisplay(); // display warmer picture with wifi on
+      break;
+    }
+    if ((WiFi.status() != WL_CONNECTED) && (temperature < 20.0))
+    {
+      data = "page1.pic=0";
+      printToDisplay(); // display warmer picture with wifi off
+      break;
+    }
+
+
+    if ((WiFi.status() == WL_CONNECTED) && (temperature < 30.0))
+    {
+      data = "page1.pic=3";
+      printToDisplay(); // display warm picture with wifi on
+      break;
+    }
+    if ((WiFi.status() != WL_CONNECTED) && (temperature < 30.0))
+    {
+      data = "page1.pic=2";
+      printToDisplay(); // display warm picture with wifi off
+      break;
+    }
+
+
+    if ((WiFi.status() == WL_CONNECTED))
+    {
+      data = "page1.pic=11";
+      printToDisplay(); // display hot picture with wifi on
+      break;
+    } else
+    {
+      data = "page1.pic=10";
+      printToDisplay(); // display hot picture with wifi off
+      break;
+    }
+  }
+  // print data to display (for time only minutes, maybe change refresh rate)
   Serial.print("\n");
   mainCounter++;
   delay(delayTime);
