@@ -28,6 +28,7 @@ bool nightmode = false;
 bool timeupdate = false;
 
 double temperature = 0.0;
+int temp = 0;
 double pressure = 0.0;
 double humidity = 0.0;
 
@@ -71,6 +72,9 @@ void readOnlineTime()
     if ((epoch_time >= set2020_1) && (epoch_time <= set2020_2))
     {
       hour++;
+      if (hour == 24) {
+        hour = 0;
+      }
     }
 
     struct tm *ti;
@@ -246,11 +250,7 @@ void setCorrectTextboxBackgroundPicture(int picture)
     data = data + String(picture);
     printToDisplay();
 
-    data = "t0.picc=";
-    data = data + String(picture);
-    printToDisplay();
-
-    data = "n2.picc=";
+    data = "t4.picc=";
     data = data + String(picture);
     printToDisplay();
 
@@ -295,14 +295,14 @@ void setDisplayPicture()
       setCorrectTextboxBackgroundPicture(6);
       return;
     }
-    if ((WiFi.status() == WL_CONNECTED) && (temperature <= 0.0))
+    if ((WiFi.status() == WL_CONNECTED) && (temperature < 0.0))
     {
       data = "page1.pic=9";
       printToDisplay(); // display cold picture with wifi on
       setCorrectTextboxBackgroundPicture(9);
       return;
     }
-    if ((WiFi.status() != WL_CONNECTED) && (temperature <= 0.0))
+    if ((WiFi.status() != WL_CONNECTED) && (temperature < 0.0))
     {
       data = "page1.pic=8";
       printToDisplay(); // display cold picture with wifi off
@@ -310,14 +310,14 @@ void setDisplayPicture()
       return;
     }
 
-    if ((WiFi.status() == WL_CONNECTED) && (temperature <= 10.0))
+    if ((WiFi.status() == WL_CONNECTED) && (temperature < 10.0))
     {
       data = "page1.pic=5";
       printToDisplay(); // display coldish picture with wifi on
       setCorrectTextboxBackgroundPicture(5);
       return;
     }
-    if ((WiFi.status() != WL_CONNECTED) && (temperature <= 10.0))
+    if ((WiFi.status() != WL_CONNECTED) && (temperature < 10.0))
     {
       data = "page1.pic=4";
       printToDisplay(); // display coldish picture with wifi off
@@ -325,14 +325,14 @@ void setDisplayPicture()
       return;
     }
 
-    if ((WiFi.status() == WL_CONNECTED) && (temperature <= 20.0))
+    if ((WiFi.status() == WL_CONNECTED) && (temperature < 20.0))
     {
       data = "page1.pic=1";
       printToDisplay(); // display warmer picture with wifi on
       setCorrectTextboxBackgroundPicture(1);
       return;
     }
-    if ((WiFi.status() != WL_CONNECTED) && (temperature <= 20.0))
+    if ((WiFi.status() != WL_CONNECTED) && (temperature < 20.0))
     {
       data = "page1.pic=0";
       printToDisplay(); // display warmer picture with wifi off
@@ -340,14 +340,14 @@ void setDisplayPicture()
       return;
     }
 
-    if ((WiFi.status() == WL_CONNECTED) && (temperature <= 30.0))
+    if ((WiFi.status() == WL_CONNECTED) && (temperature < 30.0))
     {
       data = "page1.pic=3";
       printToDisplay(); // display warm picture with wifi on
       setCorrectTextboxBackgroundPicture(3);
       return;
     }
-    if ((WiFi.status() != WL_CONNECTED) && (temperature <= 30.0))
+    if ((WiFi.status() != WL_CONNECTED) && (temperature < 30.0))
     {
       data = "page1.pic=2";
       printToDisplay(); // display warm picture with wifi off
@@ -374,25 +374,25 @@ void setDisplayPicture()
 
 void setDisplayTextColor()
 {
-  if (temperature <= 13.0)
+  if (temperature < 13.0)
   {
-    data = "n2.pco=63488"; // red temp
+    data = "t4.pco=63488"; // red temp
     printToDisplay();
     data = "t1.pco=63488"; // red degrees
     printToDisplay();
   }
   else
   {
-    if (temperature <= 19.0)
+    if (temperature < 18.0)
     {
-      data = "n2.pco=65504"; // yellow temp
+      data = "t4.pco=65504"; // yellow temp
       printToDisplay();
       data = "t1.pco=65504"; // yellow degrees
       printToDisplay();
     }
     else
     {
-      data = "n2.pco=7648"; // green temp
+      data = "t4.pco=7648"; // green temp
       printToDisplay();
       data = "t1.pco=7648"; // green degrees
       printToDisplay();
@@ -480,12 +480,11 @@ void printDataToDisplay()
     }
   }
 
-  data = "n8.val=";
-  data = data + calcMinute;
-  printToDisplay();
+  temp = round(temperature);
 
-  data = "n2.val=";
-  data = data + String(temperature, 0);
+  data = "t4.txt=\"";
+  data = data + String(temp);
+  data = data + "\"";
   printToDisplay();
 
   data = "n3.val=";
